@@ -1,0 +1,26 @@
+{
+  "WORKFLOWS_SUBSCRIPTION_ID": {
+    "type": "String",
+    "value": "@appsetting('WORKFLOWS_SUBSCRIPTION_ID')"
+  },
+  "WORKFLOWS_RESOURCE_GROUP_NAME": {
+    "type": "String",
+    "value": "@appsetting('WORKFLOWS_RESOURCE_GROUP_NAME')"
+  },
+  "WORKFLOWS_LOCATION_NAME": {
+    "type": "String",
+    "value": "@appsetting('WORKFLOWS_LOCATION_NAME')"
+  },
+  "EVENTGRID_TOPICNAME": {
+    "type": "String",
+    "value": "@appsetting('EVENTGRID_TOPICNAME')"
+  },
+  "EVENTGRID_SUBSCRIPTIONNAME": {
+    "type": "String",
+    "value": "@appsetting('EVENTGRID_SUBSCRIPTIONNAME')"
+  },
+  "EVENTGRID_CONNECTIONRUNTIMEURL": {
+    "type": "String",
+    "value": "@appsetting('EVENTGRID_CONNECTIONRUNTIMEURL')"
+  }
+}

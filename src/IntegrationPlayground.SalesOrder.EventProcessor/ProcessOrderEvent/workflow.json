@@ -1,0 +1,43 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {},
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "triggers": {
+            "When_a_resource_event_occurs": {
+                "type": "ApiConnectionWebhook",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "azureeventgrid"
+                        }
+                    },
+                    "body": {
+                        "properties": {
+                            "topic": "/subscriptions/@{encodeURIComponent(parameters('WORKFLOWS_SUBSCRIPTION_ID'))}/resourceGroups/@{encodeURIComponent(parameters('WORKFLOWS_RESOURCE_GROUP_NAME'))}/providers/Microsoft.EventGrid/topics/@{encodeURIComponent(parameters('EVENTGRID_TOPICNAME'))}",
+                            "destination": {
+                                "endpointType": "webhook",
+                                "properties": {
+                                    "endpointUrl": "@{listCallbackUrl()}"
+                                }
+                            },
+                            "filter": {
+                                "includedEventTypes": [
+                                    "NewSalesOrder"
+                                ]
+                            }
+                        }
+                    },
+                    "path": "/subscriptions/@{encodeURIComponent(parameters('WORKFLOWS_SUBSCRIPTION_ID'))}/providers/@{encodeURIComponent('Microsoft.EventGrid.Topics')}/resource/eventSubscriptions",
+                    "queries": {
+                        "x-ms-api-version": "2017-09-15-preview",
+                        "subscriptionName": "@{parameters('EVENTGRID_SUBSCRIPTIONNAME')}"
+                    }
+                },
+                "splitOn": "@triggerBody()"
+            }
+        }
+    },
+    "kind": "Stateful"
+}
