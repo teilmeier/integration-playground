@@ -1,11 +1,62 @@
 {
     "definition": {
         "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-        "actions": {},
+        "actions": {
+            "Parse_Event": {
+                "type": "ParseJson",
+                "inputs": {
+                    "content": "@triggerBody()",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "type": {
+                                "type": "string"
+                            },
+                            "data": {
+                                "type": "object",
+                                "properties": {
+                                    "PartNumber": {
+                                        "type": "string"
+                                    },
+                                    "Amount": {
+                                        "type": "integer"
+                                    }
+                                }
+                            },
+                            "time": {
+                                "type": "string"
+                            },
+                            "specversion": {
+                                "type": "string"
+                            },
+                            "subject": {
+                                "type": "string"
+                            },
+                            "topic": {
+                                "type": "string"
+                            },
+                            "eventtime": {
+                                "type": "string"
+                            },
+                            "traceparent": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {}
+            }
+        },
         "contentVersion": "1.0.0.0",
         "outputs": {},
         "triggers": {
-            "When_a_resource_event_occurs": {
+            "New_Order_Event": {
                 "type": "ApiConnectionWebhook",
                 "inputs": {
                     "host": {
@@ -34,8 +85,7 @@
                         "x-ms-api-version": "2017-09-15-preview",
                         "subscriptionName": "@{parameters('EVENTGRID_SUBSCRIPTIONNAME')}"
                     }
-                },
-                "splitOn": "@triggerBody()"
+                }
             }
         }
     },
