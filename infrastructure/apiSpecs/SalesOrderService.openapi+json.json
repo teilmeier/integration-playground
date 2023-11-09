@@ -1,0 +1,70 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Order Service",
+    "description": "Order Service API",
+    "version": "1.0"
+  },
+  "servers": [],
+  "paths": {
+    "/PublishOrderEvent": {
+      "post": {
+        "summary": "PublishOrderEvent",
+        "operationId": "post-publishorderevent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalesOrder"
+              },
+              "example": {
+                "PartNumber": "Test",
+                "Amount": 1.5
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": null
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SalesOrder": {
+        "type": "object",
+        "properties": {
+          "PartNumber": {
+            "type": "string"
+          },
+          "Amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "apiKeyHeader": {
+        "type": "apiKey",
+        "name": "Ocp-Apim-Subscription-Key",
+        "in": "header"
+      },
+      "apiKeyQuery": {
+        "type": "apiKey",
+        "name": "subscription-key",
+        "in": "query"
+      }
+    }
+  },
+  "security": [
+    {
+      "apiKeyHeader": []
+    },
+    {
+      "apiKeyQuery": []
+    }
+  ]
+}

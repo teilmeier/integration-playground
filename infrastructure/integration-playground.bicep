@@ -10,9 +10,11 @@
 // The infrastructure is deployed with the following naming convention:
 // - <prefix>-<environment>-<resource>
 
-param location string = 'northeurope'
-param prefix string = 'integration'
-param environment string = 'dev'
+param location string
+param prefix string
+param environment string
+param apimPublisherName string
+param apimPublisherEmail string
 
 var randomPostfix = substring(uniqueString(prefix, environment, location), 0, 5)
 
@@ -74,15 +76,15 @@ resource webApp 'Microsoft.Web/sites@2022-09-01' = {
         }
         {
           name: 'SalesOrderApiUri'
-          value: 'https://${functionApp.properties.defaultHostName}/api/PublishOrderEvent'
+          value: '${apiManagement.properties.gatewayUrl}/${functionAppApiDefinition.properties.path}/PublishOrderEvent'
         }
         {
           name: 'SalesOrderApiKeyParam'
-          value: 'x-functions-key'
+          value: functionAppApiDefinition.properties.subscriptionKeyParameterNames.header
         }
         {
           name: 'SalesOrderApiKeyValue'
-          value: functionAppHost.listKeys().functionKeys.default
+          value: apiProductSubscription.listSecrets().primaryKey
         }
       ]
     }
@@ -129,6 +131,10 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
         {
           name: 'EVENTGRID_URI'
           value: eventGridTopic.properties.endpoint
+        }
+        {
+          name: 'WEBSITE_RUN_FROM_PACKAGE'
+          value: '1'
         }
       ]
     }
@@ -269,6 +275,85 @@ resource eventGridConnectionAccessPolicy 'Microsoft.Web/connections/accessPolici
         objectId: logicapp.identity.principalId
       }
     }
+  }
+}
+
+resource apiManagement 'Microsoft.ApiManagement/service@2020-12-01' = {
+  name: '${prefix}-${environment}-apim'
+  location: location
+  sku: {
+    capacity: 0
+    name: 'Consumption'
+  }
+  properties: {
+    publisherEmail: apimPublisherEmail
+    publisherName: apimPublisherName
+  }
+}
+
+// An Azure API Management named value for the function app key
+resource functionAppKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2020-12-01' = {
+  name: 'functionAppKey'
+  parent: apiManagement
+  properties: {
+    displayName: 'Function-App-Key'
+    value: functionAppHost.listKeys().functionKeys.default
+    secret: true
+  }
+}
+
+resource functionAppApiDefinition 'Microsoft.ApiManagement/service/apis@2022-04-01-preview' = {
+  name: 'orderservice'
+  parent: apiManagement
+  properties: {
+    path: 'orderservice'
+    description: 'Order Service API'
+    displayName: 'Order Service'
+    format: 'openapi+json'
+    value: loadTextContent('./apiSpecs/SalesOrderService.openapi+json.json')
+    subscriptionRequired: true
+    type: 'http'
+    protocols: [ 'https' ]
+    serviceUrl: 'https://${functionApp.properties.defaultHostName}/api'
+  }
+}
+
+resource apiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-04-01-preview' = {
+  name: 'policy'
+  parent: functionAppApiDefinition
+  dependsOn: [
+    functionAppKeyNamedValue
+  ]
+  properties: {
+    format: 'rawxml'
+    value: loadTextContent('./apiSpecs/SalesOrderService.policy.xml')
+  }
+}
+
+resource apiProduct 'Microsoft.ApiManagement/service/products@2022-08-01' = {
+  parent: apiManagement
+  name: 'orderservice'
+  properties: {
+    displayName: 'Order Service'
+    subscriptionRequired: true
+    state: 'published'
+  }
+}
+
+resource apiProductSubscription 'Microsoft.ApiManagement/service/subscriptions@2022-08-01' = {
+  parent: apiManagement
+  name: 'orderservicesubscription'
+  properties: {
+    displayName: 'orderservicesubscription'
+    scope: apiProduct.id
+  }
+}
+
+resource apiProductLink 'Microsoft.ApiManagement/service/products/apiLinks@2023-03-01-preview' = {
+  parent: apiProduct
+  name: 'orderserviceapilink'
+  properties: {
+    apiId: functionAppApiDefinition.id
   }
 }
 
