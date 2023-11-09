@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using IntegrationPlayground.SalesOrder.Web.Models;
 using Newtonsoft.Json;
 using System.Text;
+using System.Net;
 
 namespace IntegrationPlayground.SalesOrder.Web.Controllers;
 
@@ -56,10 +57,25 @@ public class HomeController : Controller
     request.Headers.Add(salesOrderApiKeyParam, salesOrderApiKeyValue);
 
     var result = _httpclient.SendAsync(request).Result;
-    string resultMessage = result.Content.ReadAsStringAsync().Result;
-    
-    dynamic resultObject = JsonConvert.DeserializeObject(resultMessage);
-    return View("Index", new HomeViewModel { Message = resultObject?.subject ?? "Order submission failed" });
+    string message;
+
+    switch (result.StatusCode)
+    {
+      case HttpStatusCode.OK:
+        message = "Order submitted successfully.";
+        break;
+      case HttpStatusCode.NoContent:
+        message = "Order submission failed.";
+        break;
+      case HttpStatusCode.TooManyRequests:
+        message = "Too many requests. Please try again later.";
+        break;
+      default:
+        message = "An unknown error occured.";
+        break;
+    }
+
+    return View("Index", new HomeViewModel { Message = message });
   }
 }
 

@@ -5,6 +5,7 @@
         <set-header name="x-functions-key" exists-action="override">
             <value>{{Function-App-Key}}</value>
         </set-header>
+        <rate-limit calls="5" renewal-period="60" />
     </inbound>
     <backend>
         <base />
