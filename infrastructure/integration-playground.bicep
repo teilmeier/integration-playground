@@ -15,6 +15,7 @@ param prefix string
 param environment string
 param apimPublisherName string
 param apimPublisherEmail string
+param mailRecipient string
 
 var randomPostfix = substring(uniqueString(prefix, environment, location), 0, 5)
 
@@ -53,7 +54,44 @@ resource eventGridTopic 'Microsoft.EventGrid/topics@2022-06-15' = {
   }
 }
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
+resource communicationService 'Microsoft.Communication/communicationServices@2023-03-31' = {
+  name: '${prefix}-${environment}-communicationservice'
+  location: 'global'
+  properties: {
+    dataLocation: 'Germany'
+    linkedDomains: [
+      communicationServiceEmailDomain.id
+    ]
+  }
+}
+
+resource communicationServiceEmail 'Microsoft.Communication/emailServices@2023-03-31' = {
+  name: '${prefix}-${environment}-communicationserviceemail'
+  location: 'global'
+  properties: {
+    dataLocation: 'Germany'
+  }
+}
+
+resource communicationServiceEmailDomain 'Microsoft.Communication/emailServices/domains@2023-03-31' = {
+  name: 'AzureManagedDomain'
+  location: 'global'
+  parent: communicationServiceEmail
+  properties: {
+    domainManagement: 'AzureManaged'
+  }
+}
+
+resource communicationServiceEmailSender 'Microsoft.Communication/emailServices/domains/senderUsernames@2023-03-31' = {
+  name: 'orderservice' //Must match the username
+  parent: communicationServiceEmailDomain
+  properties: {
+    username: 'orderservice'
+    displayName: 'Order Service'
+  }
+}
+
+resource webAppPlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: '${prefix}-${environment}-appserviceplan'
   location: location
   sku: {
@@ -67,7 +105,7 @@ resource webApp 'Microsoft.Web/sites@2022-09-01' = {
   location: location
   kind: 'web'
   properties: {
-    serverFarmId: appServicePlan.id
+    serverFarmId: webAppPlan.id
     siteConfig: {
       appSettings: [
         {
@@ -161,7 +199,7 @@ resource logicAppPlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   }
 }
 
-resource logicapp 'Microsoft.Web/sites@2022-09-01' = {
+resource logicApp 'Microsoft.Web/sites@2022-09-01' = {
   name: '${prefix}-${environment}-logicapp'
   location: location
   kind: 'functionapp,workflowapp'
@@ -240,6 +278,30 @@ resource logicapp 'Microsoft.Web/sites@2022-09-01' = {
           name: 'EVENTGRID_SUBSCRIPTIONNAME'
           value: '${prefix}-${environment}-eventgridsubscription'
         }
+        {
+          name: 'APIM_BASEURL'
+          value: apiManagement.properties.gatewayUrl
+        }
+        {
+          name: 'APIM_SUBSCRIPTIONKEY'
+          value: apiProductSubscription.listSecrets().primaryKey
+        }
+        {
+          name: 'COMMUNICATIONSERVICE_CONNECTIONNAME'
+          value: '${prefix}-${environment}-communicationserviceconnection'
+        }
+        {
+          name: 'COMMUNICATIONSERVICE_CONNECTIONRUNTIMEURL'
+          value: communicationServiceConnection.properties.connectionRuntimeUrl
+        }
+        {
+          name: 'COMMUNICATIONSERVICE_SENDER'
+          value: '${communicationServiceEmailSender.properties.username}@${communicationServiceEmailDomain.properties.mailFromSenderDomain}'
+        }
+        {
+          name: 'COMMUNICATIONSERVICE_RECIPIENT'
+          value: mailRecipient
+        }
       ]
       use32BitWorkerProcess: false
       ftpsState: 'Disabled'
@@ -272,7 +334,38 @@ resource eventGridConnectionAccessPolicy 'Microsoft.Web/connections/accessPolici
       type: 'ActiveDirectory'
       identity: {
         tenantId: subscription().tenantId
-        objectId: logicapp.identity.principalId
+        objectId: logicApp.identity.principalId
+      }
+    }
+  }
+}
+
+resource communicationServiceConnection 'Microsoft.Web/connections@2016-06-01' = {
+  name: '${prefix}-${environment}-communicationserviceconnection'
+  location: location
+  kind: 'V2'
+  properties: {
+    api: {
+      id: '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Web/locations/${location}/managedApis/acsemail'
+    }
+    displayName: '${prefix}-${environment}-communicationserviceconnection'
+    
+    parameterValues: {
+      api_key: communicationService.listKeys().primaryConnectionString
+    }
+  }
+}
+
+resource communicationServiceConnectionAccessPolicy 'Microsoft.Web/connections/accessPolicies@2016-06-01' = {
+  name: '${prefix}-${environment}-communicationserviceconnectionaccesspolicy'
+  parent: communicationServiceConnection
+  location: location
+  properties: {
+    principal: {
+      type: 'ActiveDirectory'
+      identity: {
+        tenantId: subscription().tenantId
+        objectId: logicApp.identity.principalId
       }
     }
   }
@@ -291,7 +384,6 @@ resource apiManagement 'Microsoft.ApiManagement/service@2020-12-01' = {
   }
 }
 
-// An Azure API Management named value for the function app key
 resource functionAppKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2020-12-01' = {
   name: 'functionAppKey'
   parent: apiManagement
@@ -360,11 +452,12 @@ resource apiProductLink 'Microsoft.ApiManagement/service/products/apiLinks@2023-
 resource eventGridSubscriptionContributor 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
   name: '428e0ff0-5e57-4d9c-a221-2c70d0e0a443'
 }
-resource eventGridSubscriptionContributoroleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(eventGridTopic.id, resourceGroup().id, logicapp.id)
+
+resource eventGridSubscriptionContributoRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(eventGridTopic.id, resourceGroup().id, logicApp.id)
   scope: eventGridTopic
   properties: {
-    principalId: logicapp.identity.principalId
+    principalId: logicApp.identity.principalId
     roleDefinitionId: eventGridSubscriptionContributor.id
   }
 }

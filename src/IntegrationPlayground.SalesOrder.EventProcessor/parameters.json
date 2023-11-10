@@ -22,5 +22,25 @@
   "EVENTGRID_CONNECTIONRUNTIMEURL": {
     "type": "String",
     "value": "@appsetting('EVENTGRID_CONNECTIONRUNTIMEURL')"
+  },
+  "APIM_BASEURL": {
+    "type": "String",
+    "value": "@appsetting('APIM_BASEURL')"
+  },
+  "APIM_SUBSCRIPTIONKEY": {
+    "type": "String",
+    "value": "@appsetting('APIM_SUBSCRIPTIONKEY')"
+  },
+  "COMMUNICATIONSERVICE_CONNECTIONRUNTIMEURL": {
+    "type": "String",
+    "value": "@appsetting('COMMUNICATIONSERVICE_CONNECTIONRUNTIMEURL')"
+  },
+  "COMMUNICATIONSERVICE_SENDER": {
+    "type": "String",
+    "value": "@appsetting('COMMUNICATIONSERVICE_SENDER')"
+  },
+  "COMMUNICATIONSERVICE_RECIPIENT": {
+    "type": "String",
+    "value": "@appsetting('COMMUNICATIONSERVICE_RECIPIENT')"
   }
 }

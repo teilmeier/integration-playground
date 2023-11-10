@@ -5,4 +5,5 @@ param prefix = 'integration'
 param environment = 'dev'
 param apimPublisherEmail = 'example@example.com'
 param apimPublisherName = 'Example Publisher'
+param mailRecipient = 'example@example.com'
 

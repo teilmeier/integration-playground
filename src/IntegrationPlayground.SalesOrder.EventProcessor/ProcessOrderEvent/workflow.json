@@ -51,6 +51,265 @@
                     }
                 },
                 "runAfter": {}
+            },
+            "OpenAI_Mail": {
+                "type": "Http",
+                "inputs": {
+                    "uri": "@{parameters('APIM_BASEURL')}/openai/deployments/chatgpt/chat/completions?api-version=2023-09-15-preview",
+                    "method": "POST",
+                    "headers": {
+                        "Ocp-Apim-Subscription-Key": "@{parameters('APIM_SUBSCRIPTIONKEY')}"
+                    },
+                    "body": {
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "You are generating order confirmation mail texts. The current order contains the following item:\nPart Number\n@{body('Parse_Event')?['data']?['PartNumber']}, Amount: @{body('Parse_Event')?['data']?['Amount']}\nCustomer Name: John Doe\nConfirmation Number: 4711\nSender Name: Philip\nShop Name: Sales Order Playground"
+                            },
+                            {
+                                "role": "user",
+                                "content": "Generate a formal order confirmation mail"
+                            }
+                        ],
+                        "temperature": 0.7,
+                        "top_p": 0.95,
+                        "frequency_penalty": 0,
+                        "presence_penalty": 0,
+                        "max_tokens": 800,
+                        "stop": null
+                    }
+                },
+                "runAfter": {
+                    "Parse_Event": [
+                        "SUCCEEDED"
+                    ]
+                },
+                "runtimeConfiguration": {
+                    "contentTransfer": {
+                        "transferMode": "Chunked"
+                    }
+                }
+            },
+            "Parse_OpenAI_Response": {
+                "type": "ParseJson",
+                "inputs": {
+                    "content": "@body('OpenAI_Mail')",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "object": {
+                                "type": "string"
+                            },
+                            "created": {
+                                "type": "integer"
+                            },
+                            "model": {
+                                "type": "string"
+                            },
+                            "prompt_filter_results": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "prompt_index": {
+                                            "type": "integer"
+                                        },
+                                        "content_filter_results": {
+                                            "type": "object",
+                                            "properties": {
+                                                "hate": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "filtered": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "severity": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "self_harm": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "filtered": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "severity": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "sexual": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "filtered": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "severity": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "violence": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "filtered": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "severity": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "prompt_index",
+                                        "content_filter_results"
+                                    ]
+                                }
+                            },
+                            "choices": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "index": {
+                                            "type": "integer"
+                                        },
+                                        "finish_reason": {
+                                            "type": "string"
+                                        },
+                                        "message": {
+                                            "type": "object",
+                                            "properties": {
+                                                "role": {
+                                                    "type": "string"
+                                                },
+                                                "content": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "content_filter_results": {
+                                            "type": "object",
+                                            "properties": {
+                                                "hate": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "filtered": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "severity": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "self_harm": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "filtered": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "severity": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "sexual": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "filtered": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "severity": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "violence": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "filtered": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "severity": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "index",
+                                        "finish_reason",
+                                        "message",
+                                        "content_filter_results"
+                                    ]
+                                }
+                            },
+                            "usage": {
+                                "type": "object",
+                                "properties": {
+                                    "prompt_tokens": {
+                                        "type": "integer"
+                                    },
+                                    "completion_tokens": {
+                                        "type": "integer"
+                                    },
+                                    "total_tokens": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "OpenAI_Mail": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Send_email_(Preview)": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "acsemail"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "sender": "@parameters('COMMUNICATIONSERVICE_SENDER')",
+                        "recipients": {
+                            "to": [
+                                {
+                                    "email": "@parameters('COMMUNICATIONSERVICE_RECIPIENT')"
+                                }
+                            ]
+                        },
+                        "content": {
+                            "subject": "Thank you!",
+                            "html": "<p>@{body('Parse_OpenAI_Response')?['choices'][0].message.content}</p>"
+                        },
+                        "importance": "normal"
+                    },
+                    "path": "/emails:send",
+                    "queries": {
+                        "api-version": "2021-10-01-preview"
+                    }
+                },
+                "runAfter": {
+                    "Parse_OpenAI_Response": [
+                        "SUCCEEDED"
+                    ]
+                }
             }
         },
         "contentVersion": "1.0.0.0",

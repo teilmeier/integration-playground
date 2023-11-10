@@ -17,6 +17,18 @@
           "audience": "https://management.core.windows.net/"
         }
       }
+    },
+    "acsemail": {
+      "api": {
+        "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/providers/Microsoft.Web/locations/@{appsetting('WORKFLOWS_LOCATION_NAME')}/managedApis/acsemail"
+      },
+      "connection": {
+        "id": "/subscriptions/@{appsetting('WORKFLOWS_SUBSCRIPTION_ID')}/resourceGroups/@{appsetting('WORKFLOWS_RESOURCE_GROUP_NAME')}/providers/Microsoft.Web/connections/@{appsetting('COMMUNICATIONSERVICE_CONNECTIONNAME')}"
+      },
+      "connectionRuntimeUrl": "@parameters('COMMUNICATIONSERVICE_CONNECTIONRUNTIMEURL')",
+      "authentication": {
+        "type": "ManagedServiceIdentity"
+      }
     }
   }
 }
