@@ -1,24 +1,25 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+  ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
   <h1 class="display-4">Welcome</h1>
   <p></p>
+
   @using (Html.BeginForm("SendSalesOrder", "Home"))
   {
-    <label title="PartNumber">Part Number</label>
+    <div class="form-group">
+      <label for="PartNumber">Part Number</label>
+      <input type="text" class="form-control" id="PartNumber" name="PartNumber" required="required" />
+    </div>
 
-    <input type="text" name="PartNumber" required="required" />
+    <div class="form-group">
+      <label for="Amount">Amount</label>
+      <input type="number" class="form-control" id="Amount" name="Amount" required="required" />
+    </div>
 
-    <br />
-    <label title="Amount">Amount</label>
-
-    <input type="number" name="Amount" required="required" />
-
-    <br />
-
-    <input type="submit" value="Post Sales Order" />
+    <button type="submit" class="btn btn-primary">Post Sales Order</button>
   }
+
   <p>@Model.Message</p>
 </div>
