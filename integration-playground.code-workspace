@@ -11,6 +11,9 @@
     },
     {
       "path": "infrastructure"
+    },
+    {
+      "path": ".github/workflows"
     }
   ],
   "settings": {
@@ -46,6 +49,16 @@
         "problemMatcher": "$msCompile",
         "dependsOn": "clean"
       }
+    ]
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.azure-account",
+      "ms-azuretools.vscode-azureappservice",
+      "ms-azuretools.vscode-azurelogicapps",
+      "ms-azuretools.vscode-azurefunctions",
+      "ms-azuretools.vscode-bicep",
+      "ms-azuretools.vscode-apimanagement"
     ]
   }
 }
