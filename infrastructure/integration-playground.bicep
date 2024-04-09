@@ -4,9 +4,6 @@
 // - An Logic App Standard on a WS1 Plan
 // - Other needed resources like storage accounts, app insights, etc.
 //
-// The infrastructure is deployed to a resource group
-// that is created if it does not exist.
-//
 // The infrastructure is deployed with the following naming convention:
 // - <prefix>-<environment>-<resource>
 
@@ -16,6 +13,8 @@ param environment string
 param apimPublisherName string
 param apimPublisherEmail string
 param mailRecipient string
+param openAiApiKey string
+param openAiUrl string
 
 var randomPostfix = substring(uniqueString(prefix, environment, location), 0, 5)
 
@@ -394,6 +393,16 @@ resource functionAppKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2
   }
 }
 
+resource openAiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2020-12-01' = {
+  name: 'OpenAIAPIKey'
+  parent: apiManagement
+  properties: {
+    displayName: 'OpenAI-API-Key'
+    value: openAiApiKey
+    secret: true
+  }
+}
+
 resource functionAppApiDefinition 'Microsoft.ApiManagement/service/apis@2022-04-01-preview' = {
   name: 'orderservice'
   parent: apiManagement
@@ -410,7 +419,23 @@ resource functionAppApiDefinition 'Microsoft.ApiManagement/service/apis@2022-04-
   }
 }
 
-resource apiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-04-01-preview' = {
+resource openAiApiDefinition 'Microsoft.ApiManagement/service/apis@2022-04-01-preview' = {
+  name: 'openai'
+  parent: apiManagement
+  properties: {
+    path: 'openai'
+    description: 'Azure Open AI API'
+    displayName: 'Azure Open AI'
+    format: 'openapi+json'
+    value: loadTextContent('./apiSpecs/AzureOpenAI.openapi+json.json')
+    subscriptionRequired: true
+    type: 'http'
+    protocols: [ 'https' ]
+    serviceUrl: openAiUrl
+  }
+}
+
+resource functionAppApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-04-01-preview' = {
   name: 'policy'
   parent: functionAppApiDefinition
   dependsOn: [
@@ -419,6 +444,18 @@ resource apiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-04-01-pre
   properties: {
     format: 'rawxml'
     value: loadTextContent('./apiSpecs/SalesOrderService.policy.xml')
+  }
+}
+
+resource openAiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-04-01-preview' = {
+  name: 'policy'
+  parent: openAiApiDefinition
+  dependsOn: [
+    openAiKeyNamedValue
+  ]
+  properties: {
+    format: 'rawxml'
+    value: loadTextContent('./apiSpecs/AzureOpenAI.policy.xml')
   }
 }
 
@@ -441,11 +478,19 @@ resource apiProductSubscription 'Microsoft.ApiManagement/service/subscriptions@2
   }
 }
 
-resource apiProductLink 'Microsoft.ApiManagement/service/products/apiLinks@2023-03-01-preview' = {
+resource functionAppApiProductLink 'Microsoft.ApiManagement/service/products/apiLinks@2023-03-01-preview' = {
   parent: apiProduct
   name: 'orderserviceapilink'
   properties: {
     apiId: functionAppApiDefinition.id
+  }
+}
+
+resource openAiApiProductLink 'Microsoft.ApiManagement/service/products/apiLinks@2023-03-01-preview' = {
+  parent: apiProduct
+  name: 'openaiapilink'
+  properties: {
+    apiId: openAiApiDefinition.id
   }
 }
 
